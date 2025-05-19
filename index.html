@@ -3,81 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlphaDrive Agent</title>
+  <title>AlphaDrive - הסוכן הדיגיטלי</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
       background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
+      padding: 20px;
     }
 
-    img.logo {
-      max-width: 220px;
-      margin: 30px auto 20px;
-      display: block;
+    .logo {
+      max-width: 200px;
+      margin: 20px auto;
     }
 
-    h2 {
-      margin-top: 0;
-      font-weight: normal;
+    .title {
+      font-size: 22px;
+      margin-bottom: 20px;
     }
 
-    input, button {
-      padding: 12px;
-      margin: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
+    .input-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    input {
-      width: 70%;
+    input[type="text"] {
+      width: 80%;
       max-width: 400px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 30px;
+      border: none;
+      text-align: right;
     }
 
-    button {
-      cursor: pointer;
+    button.send {
       background-color: #00bfff;
       color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .mic-button {
+      background-color: transparent;
+      border: 2px solid #00bfff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      color: #00bfff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mic-button:hover {
+      background-color: rgba(0, 191, 255, 0.1);
     }
 
     #response {
-      margin-top: 20px;
+      margin-top: 30px;
     }
 
     video {
-      max-width: 90%;
+      width: 90%;
+      max-width: 500px;
       margin-top: 20px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(255,255,255,0.2);
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-
-    @media (min-width: 600px) {
-      .controls {
-        flex-direction: row;
-        justify-content: center;
-      }
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
   <img src="https://raw.githubusercontent.com/AlphaDrive-Bot/chat-bot/main/logo%20שקוף.png" alt="AlphaDrive Logo" class="logo" />
-  <h2>שוחח עם הסוכן הדיגיטלי</h2>
+  <div class="title">שוחח עם הסוכן הדיגיטלי של AlphaDrive</div>
 
-  <div class="controls">
-    <input type="text" id="userInput" placeholder="כתוב משהו..." />
-    <button onclick="sendToBot()">שלח</button>
-    <button onclick="startRecording()">🎙 דבר</button>
+  <div class="input-area">
+    <button class="mic-button" onclick="startRecording()">🎤</button>
+    <input type="text" id="userInput" placeholder="כתוב כאן..." />
+    <button class="send" onclick="sendToBot()">שלח</button>
   </div>
 
   <div id="response"></div>
@@ -86,7 +98,7 @@
     async function sendToBot(text = null) {
       const input = text || document.getElementById('userInput').value;
       const responseDiv = document.getElementById('response');
-      responseDiv.innerHTML = "⏳ טוען תגובה...";
+      responseDiv.innerHTML = "⏳ שולח לדמות...";
 
       const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
         method: "POST",
@@ -97,31 +109,29 @@
       const data = await res.json();
       if (data.video_url) {
         responseDiv.innerHTML = `
-          <p>הנה הסרטון שלך:</p>
           <video controls autoplay>
             <source src="${data.video_url}" type="video/mp4">
           </video>`;
       } else {
-        responseDiv.innerHTML = `<p>לא התקבלה תשובה מהסוכן 😢</p>`;
+        responseDiv.innerHTML = `<p>😢 לא התקבלה תגובה</p>`;
       }
     }
 
-    // 🎙 הקלטת קול
     function startRecording() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = 'he-IL';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-
       recognition.start();
 
       recognition.onresult = function (event) {
         const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
         sendToBot(transcript);
       };
 
       recognition.onerror = function (event) {
-        alert('שגיאה בהקלטה: ' + event.error);
+        alert("שגיאה בהקלטה: " + event.error);
       };
     }
   </script>
