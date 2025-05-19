@@ -57,15 +57,13 @@
       margin-left: 6px;
     }
 
-    .mic-button svg,
-    .send-button svg {
+    .mic-button svg, .send-button svg {
       width: 20px;
       height: 20px;
       fill: #555;
     }
 
-    .mic-button:hover,
-    .send-button:hover {
+    .mic-button:hover, .send-button:hover {
       background-color: #f0f0f0;
     }
 
@@ -112,34 +110,54 @@
 
   <script>
     async function sendToBot(text = null) {
-      const input = text || document.getElementById('userInput').value;
+      const inputEl = document.getElementById('userInput');
+      const input = text || inputEl.value.trim();
       const responseDiv = document.getElementById('response');
-      responseDiv.innerHTML = "⏳ שולח לדמות...";
 
-      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input })
-      });
+      if (!input) {
+        responseDiv.innerHTML = "<p>⚠️ לא הוזן טקסט לשליחה</p>";
+        return;
+      }
 
-      const data = await res.json();
-      if (data.video_url) {
-        responseDiv.innerHTML = `
-          <div class="video-wrapper">
-            <video controls autoplay>
-              <source src="${data.video_url}" type="video/mp4">
-            </video>
-          </div>`;
-      } else {
-        responseDiv.innerHTML = `<p>😢 לא התקבלה תגובה</p>`;
+      responseDiv.innerHTML = `
+        <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
+        ⏳ שולח לדמות...
+      `;
+
+      inputEl.value = "";
+
+      try {
+        const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
+
+        const data = await res.json();
+        if (data.video_url) {
+          responseDiv.innerHTML += `
+            <div class="video-wrapper">
+              <video controls autoplay>
+                <source src="${data.video_url}" type="video/mp4">
+              </video>
+            </div>`;
+        } else {
+          responseDiv.innerHTML = `<p>😢 לא התקבלה תגובה</p>`;
+        }
+      } catch (err) {
+        responseDiv.innerHTML = `<p>🚫 שגיאה בשליחה: ${err.message}</p>`;
       }
     }
 
     function startRecording() {
+      const responseDiv = document.getElementById('response');
+      responseDiv.innerHTML = "🎙 מקשיב...";
+
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = 'he-IL';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
+
       recognition.start();
 
       recognition.onresult = function (event) {
@@ -149,7 +167,7 @@
       };
 
       recognition.onerror = function (event) {
-        alert("שגיאה בהקלטה: " + event.error);
+        responseDiv.innerHTML = `<p>❌ שגיאה בהקלטה: ${event.error}</p>`;
       };
     }
 
