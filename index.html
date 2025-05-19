@@ -3,60 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlphaDrive Bot</title>
+  <title>AlphaDrive Agent</title>
   <style>
     body {
       margin: 0;
       background-color: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      padding: 20px;
       text-align: center;
-    }
-
-    .logo {
-      max-width: 200px;
-      margin: 30px auto 10px;
+      padding: 30px 15px;
     }
 
     .title {
       font-size: 22px;
-      margin: 10px 0 30px;
+      margin-bottom: 30px;
     }
 
     .chat-container {
+      background-color: #e3e3e3;
+      border-radius: 12px;
+      padding: 10px 15px;
       display: flex;
-      justify-content: center;
       align-items: center;
-      background-color: #2c2c2c;
-      border-radius: 40px;
-      padding: 5px 15px;
-      width: 90%;
       max-width: 500px;
       margin: 0 auto;
-      position: relative;
     }
 
     .chat-container input {
-      background: transparent;
+      flex: 1;
+      font-size: 16px;
+      padding: 14px 10px;
       border: none;
       outline: none;
-      color: #fff;
-      font-size: 16px;
-      flex: 1;
-      padding: 12px;
+      background: transparent;
+      color: #000;
+      text-align: right;
     }
 
-    .chat-container input::placeholder {
-      color: #aaa;
-    }
-
-    .chat-container button {
-      background: none;
+    .mic-button {
+      background-color: #fff;
       border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #555;
       cursor: pointer;
-      color: #00bfff;
-      font-size: 20px;
+    }
+
+    .mic-button:hover {
+      background-color: #f0f0f0;
     }
 
     #response {
@@ -65,20 +64,20 @@
 
     video {
       width: 90%;
-      max-width: 480px;
-      border-radius: 20px;
+      max-width: 500px;
+      border-radius: 16px;
       border: 2px solid white;
-      box-shadow: 0 0 15px rgba(255,255,255,0.2);
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
     }
   </style>
 </head>
 <body>
-  <img src="https://raw.githubusercontent.com/AlphaDrive-Bot/chat-bot/main/logo.png" alt="AlphaDrive Logo" class="logo" />
+
   <div class="title">שוחח עם הסוכן הדיגיטלי של AlphaDrive</div>
 
   <div class="chat-container">
+    <button class="mic-button" onclick="startRecording()">🎤</button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button onclick="startRecording()">🎤</button>
   </div>
 
   <div id="response"></div>
