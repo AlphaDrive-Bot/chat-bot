@@ -44,7 +44,7 @@
       color: #888;
     }
 
-    .mic-button {
+    .mic-button, .send-button {
       background-color: #fff;
       border: none;
       border-radius: 50%;
@@ -54,15 +54,18 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      margin-left: 6px;
     }
 
-    .mic-button svg {
+    .mic-button svg,
+    .send-button svg {
       width: 20px;
       height: 20px;
       fill: #555;
     }
 
-    .mic-button:hover {
+    .mic-button:hover,
+    .send-button:hover {
       background-color: #f0f0f0;
     }
 
@@ -98,6 +101,11 @@
       </svg>
     </button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
+    <button class="send-button" onclick="sendToBot()" aria-label="שלח">
+      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="#555">
+        <path d="M2 10L18 2l-4 8 4 8z"/>
+      </svg>
+    </button>
   </div>
 
   <div id="response"></div>
