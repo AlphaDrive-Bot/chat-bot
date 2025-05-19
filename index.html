@@ -1,42 +1,129 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>שיחה עם הסוכן</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlphaDrive Agent</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    img.logo {
+      max-width: 220px;
+      margin: 30px auto 20px;
+      display: block;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: normal;
+    }
+
+    input, button {
+      padding: 12px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    input {
+      width: 70%;
+      max-width: 400px;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #00bfff;
+      color: white;
+    }
+
+    #response {
+      margin-top: 20px;
+    }
+
+    video {
+      max-width: 90%;
+      margin-top: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    @media (min-width: 600px) {
+      .controls {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
-<body style="font-family: Arial; text-align: center; padding: 2em;">
+<body>
+  <img src="https://raw.githubusercontent.com/AlphaDrive-Bot/chat-bot/main/logo%20שקוף.png" alt="AlphaDrive Logo" class="logo" />
   <h2>שוחח עם הסוכן הדיגיטלי</h2>
-  <input type="text" id="userInput" placeholder="כתוב משהו..." style="width: 60%; padding: 0.5em;">
-  <button onclick="sendToBot()" style="padding: 0.5em 1em;">שלח</button>
-  <div id="response" style="margin-top: 2em;"></div>
+
+  <div class="controls">
+    <input type="text" id="userInput" placeholder="כתוב משהו..." />
+    <button onclick="sendToBot()">שלח</button>
+    <button onclick="startRecording()">🎙 דבר</button>
+  </div>
+
+  <div id="response"></div>
 
   <script>
-    async function sendToBot() {
-      const input = document.getElementById('userInput').value;
+    async function sendToBot(text = null) {
+      const input = text || document.getElementById('userInput').value;
       const responseDiv = document.getElementById('response');
+      responseDiv.innerHTML = "⏳ טוען תגובה...";
 
       const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input })
       });
 
       const data = await res.json();
-
       if (data.video_url) {
         responseDiv.innerHTML = `
           <p>הנה הסרטון שלך:</p>
-          <video controls autoplay style="max-width: 80%;">
+          <video controls autoplay>
             <source src="${data.video_url}" type="video/mp4">
-          </video>
-        `;
+          </video>`;
       } else {
-        responseDiv.innerHTML = `<p>שגיאה או אין תגובה</p>`;
+        responseDiv.innerHTML = `<p>לא התקבלה תשובה מהסוכן 😢</p>`;
       }
+    }
+
+    // 🎙 הקלטת קול
+    function startRecording() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'he-IL';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        sendToBot(transcript);
+      };
+
+      recognition.onerror = function (event) {
+        alert('שגיאה בהקלטה: ' + event.error);
+      };
     }
   </script>
 </body>
 </html>
--
