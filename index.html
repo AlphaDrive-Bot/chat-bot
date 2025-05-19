@@ -70,12 +70,20 @@
       margin-top: 30px;
     }
 
-    video {
-      width: 90%;
-      max-width: 500px;
-      border-radius: 16px;
-      border: 2px solid white;
-      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    .video-wrapper {
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 18px;
+      max-width: 520px;
+      margin: 30px auto 0;
+      box-shadow: 0 0 20px rgba(255,255,255,0.15);
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      border-radius: 12px;
+      border: none;
+      display: block;
     }
   </style>
 </head>
@@ -109,9 +117,11 @@
       const data = await res.json();
       if (data.video_url) {
         responseDiv.innerHTML = `
-          <video controls autoplay>
-            <source src="${data.video_url}" type="video/mp4">
-          </video>`;
+          <div class="video-wrapper">
+            <video controls autoplay>
+              <source src="${data.video_url}" type="video/mp4">
+            </video>
+          </div>`;
       } else {
         responseDiv.innerHTML = `<p>😢 לא התקבלה תגובה</p>`;
       }
