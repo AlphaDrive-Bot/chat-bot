@@ -40,10 +40,6 @@
       text-align: right;
     }
 
-    .chat-container input::placeholder {
-      color: #888;
-    }
-
     .mic-button, .send-button {
       background-color: #fff;
       border: none;
@@ -71,20 +67,30 @@
       margin-top: 30px;
     }
 
-    .video-wrapper {
-      background-color: #fff;
-      padding: 10px;
-      border-radius: 18px;
-      max-width: 520px;
-      margin: 30px auto 0;
-      box-shadow: 0 0 20px rgba(255,255,255,0.15);
+    .wave {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
     }
 
-    .video-wrapper video {
-      width: 100%;
-      border-radius: 12px;
-      border: none;
+    .wave span {
       display: block;
+      width: 6px;
+      height: 20px;
+      background: #4caf50;
+      margin: 0 2px;
+      border-radius: 4px;
+      animation: waveAnim 1s infinite ease-in-out;
+    }
+
+    .wave span:nth-child(2) { animation-delay: -0.2s; }
+    .wave span:nth-child(3) { animation-delay: -0.4s; }
+    .wave span:nth-child(4) { animation-delay: -0.6s; }
+    .wave span:nth-child(5) { animation-delay: -0.8s; }
+
+    @keyframes waveAnim {
+      0%, 100% { height: 10px; }
+      50% { height: 30px; }
     }
   </style>
 </head>
@@ -121,9 +127,8 @@
 
       responseDiv.innerHTML = `
         <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
-        ⏳ שולח לדמות...
+        ⏳ הסוכן חושב...
       `;
-
       inputEl.value = "";
 
       try {
@@ -134,16 +139,30 @@
         });
 
         const data = await res.json();
-        if (data.video_url) {
-          responseDiv.innerHTML += `
-            <div class="video-wrapper">
-              <video controls autoplay>
-                <source src="${data.video_url}" type="video/mp4">
-              </video>
-            </div>`;
-        } else {
-          responseDiv.innerHTML = `<p>😢 לא התקבלה תגובה</p>`;
+
+        responseDiv.innerHTML = `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
+
+        if (data.text) {
+          responseDiv.innerHTML += `<div style="margin: 10px 0;">${data.text}</div>`;
         }
+
+        if (data.audio_url) {
+          responseDiv.innerHTML += `
+            <div class="wave" id="wave">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>`;
+
+          const audio = new Audio(data.audio_url);
+          audio.play();
+          audio.onended = () => {
+            document.getElementById("wave").remove();
+          };
+        }
+
+        if (!data.text && !data.audio_url) {
+          responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה מהשרת</p>`;
+        }
+
       } catch (err) {
         responseDiv.innerHTML = `<p>🚫 שגיאה בשליחה: ${err.message}</p>`;
       }
