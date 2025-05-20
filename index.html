@@ -1,19 +1,24 @@
-<body style="display: flex; flex-direction: column; height: 100vh;">
+body {
+  margin: 0;
+  background-color: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 30px 15px 100px; /* רווח לתחתית */
+}
 
-  <div class="title">שוחח עם הסוכן הדיגיטלי של AlphaDrive</div>
-
-  <div id="response" style="flex: 1; overflow-y: auto; padding-bottom: 80px;">🤖 ממתין לקלט...</div>
-
-  <div class="chat-container" style="position: fixed; bottom: 0; width: 100%; max-width: 600px; left: 50%; transform: translateX(-50%); z-index: 999;">
-    <button class="mic-button" onclick="startRecording()" aria-label="הקלט קול">
-      <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
-        <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
-      </svg>
-    </button>
-    <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="send-button" onclick="sendToBot()" aria-label="שלח">
-      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="#555">
-        <path d="M2 10L18 2l-4 8 4 8z"/>
-      </svg>
-    </button>
-  </div>
+.chat-container {
+  background-color: #e3e3e3;
+  border-radius: 12px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  max-width: 500px;
+  margin: 0 auto;
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  justify-content: center;
+}
