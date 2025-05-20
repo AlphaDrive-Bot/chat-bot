@@ -11,7 +11,7 @@
       color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 30px 15px 120px; /* רווח לתחתית */
+      padding: 30px 15px 120px;
     }
 
     .title {
@@ -74,7 +74,7 @@
 
     #response {
       margin-top: 30px;
-      margin-bottom: 80px; /* מרווח מתחת לטקסט לפני שורת ההקלדה */
+      margin-bottom: 80px;
     }
 
     .wave {
@@ -157,6 +157,7 @@
         }
 
         if (data.audio_url) {
+          // רק אם יש קול – להפעיל אנימציה
           responseDiv.innerHTML += `
             <div class="wave" id="wave">
               <span></span><span></span><span></span><span></span><span></span>
