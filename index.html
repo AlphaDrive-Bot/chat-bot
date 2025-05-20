@@ -2,117 +2,117 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AlphaDrive Bot</title>
   <style>
     body {
       margin: 0;
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px 15px;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chat-wrapper {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      padding: 10px;
     }
 
     .title {
-      font-size: 22px;
-      margin-bottom: 30px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
     }
 
-    .chat-container {
-      background-color: #e3e3e3;
-      border-radius: 12px;
-      padding: 10px 15px;
-      display: flex;
-      align-items: center;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .chat-container input {
-      flex: 1;
-      font-size: 16px;
-      padding: 16px 10px;
-      border: none;
-      outline: none;
-      background: transparent;
-      color: #000;
-      text-align: right;
-    }
-
-    .mic-button, .send-button {
-      background-color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 42px;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      margin-left: 6px;
-    }
-
-    .mic-button svg, .send-button svg {
-      width: 20px;
-      height: 20px;
-      fill: #555;
-    }
-
-    .mic-button:hover, .send-button:hover {
-      background-color: #f0f0f0;
+    .response-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      margin: 10px;
+      min-height: 120px;
     }
 
     #response {
-      margin-top: 30px;
+      font-size: 16px;
+      color: #222;
+      text-align: right;
     }
 
     .wave {
       display: flex;
-      justify-content: center;
+      justify-content: start;
       margin-top: 10px;
     }
 
     .wave span {
-      display: block;
-      width: 6px;
-      height: 20px;
+      width: 5px;
+      height: 15px;
+      margin-left: 3px;
       background: #4caf50;
-      margin: 0 2px;
-      border-radius: 4px;
+      border-radius: 3px;
       animation: waveAnim 1s infinite ease-in-out;
     }
 
     .wave span:nth-child(2) { animation-delay: -0.2s; }
     .wave span:nth-child(3) { animation-delay: -0.4s; }
-    .wave span:nth-child(4) { animation-delay: -0.6s; }
-    .wave span:nth-child(5) { animation-delay: -0.8s; }
 
     @keyframes waveAnim {
       0%, 100% { height: 10px; }
-      50% { height: 30px; }
+      50% { height: 25px; }
+    }
+
+    .input-container {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+      border-top: 1px solid #ddd;
+    }
+
+    .input-container input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .input-container button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 0 15px;
+      margin-right: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .input-container button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
+  <div class="chat-wrapper">
+    <div class="title">שוחח עם הסוכן של AlphaDrive</div>
 
-  <div class="title">שוחח עם הסוכן הדיגיטלי של AlphaDrive</div>
+    <div class="response-box">
+      <div id="response">🤖 ממתין לקלט...</div>
+    </div>
 
-  <div class="chat-container">
-    <button class="mic-button" onclick="startRecording()" aria-label="הקלט קול">
-      <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
-        <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
-      </svg>
-    </button>
-    <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="send-button" onclick="sendToBot()" aria-label="שלח">
-      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="#555">
-        <path d="M2 10L18 2l-4 8 4 8z"/>
-      </svg>
-    </button>
+    <div class="input-container">
+      <button onclick="startRecording()">🎙️</button>
+      <input type="text" id="userInput" placeholder="הקלד כאן ושלח..." />
+      <button onclick="sendToBot()">שלח</button>
+    </div>
   </div>
-
-  <div id="response"></div>
 
   <script>
     async function sendToBot(text = null) {
@@ -121,14 +121,11 @@
       const responseDiv = document.getElementById('response');
 
       if (!input) {
-        responseDiv.innerHTML = "<p>⚠️ לא הוזן טקסט לשליחה</p>";
+        responseDiv.innerHTML = "⚠️ לא הוזן טקסט לשליחה.";
         return;
       }
 
-      responseDiv.innerHTML = `
-        <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
-        ⏳ הסוכן חושב...
-      `;
+      responseDiv.innerHTML = "⏳ הסוכן חושב...";
       inputEl.value = "";
 
       try {
@@ -139,43 +136,43 @@
         });
 
         const data = await res.json();
+        console.log("תשובה מהשרת:", data);
 
-        responseDiv.innerHTML = `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
-
+        let html = "";
         if (data.text) {
-          responseDiv.innerHTML += `<div style="margin: 10px 0;">${data.text}</div>`;
+          html += `<div style="margin-bottom: 10px;"><b>הסוכן:</b> ${data.text}</div>`;
         }
 
         if (data.audio_url) {
-          responseDiv.innerHTML += `
+          html += `
             <div class="wave" id="wave">
-              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span>
             </div>`;
-
           const audio = new Audio(data.audio_url);
           audio.play();
           audio.onended = () => {
-            document.getElementById("wave").remove();
+            document.getElementById("wave")?.remove();
           };
         }
 
         if (!data.text && !data.audio_url) {
-          responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה מהשרת</p>`;
+          html = "😢 לא התקבלה תגובה מהשרת.";
         }
 
+        responseDiv.innerHTML = html;
+
       } catch (err) {
-        responseDiv.innerHTML = `<p>🚫 שגיאה בשליחה: ${err.message}</p>`;
+        responseDiv.innerHTML = `🚫 שגיאה: ${err.message}`;
       }
     }
 
     function startRecording() {
       const responseDiv = document.getElementById('response');
-      responseDiv.innerHTML = "🎙 מקשיב...";
+      responseDiv.innerHTML = "🎙️ מקשיב...";
 
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = 'he-IL';
       recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
 
       recognition.start();
 
@@ -186,14 +183,12 @@
       };
 
       recognition.onerror = function (event) {
-        responseDiv.innerHTML = `<p>❌ שגיאה בהקלטה: ${event.error}</p>`;
+        responseDiv.innerHTML = `❌ שגיאה בהקלטה: ${event.error}`;
       };
     }
 
     document.getElementById('userInput').addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        sendToBot();
-      }
+      if (e.key === "Enter") sendToBot();
     });
   </script>
 </body>
