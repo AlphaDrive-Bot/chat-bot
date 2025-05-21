@@ -131,7 +131,7 @@
       const responseDiv = document.getElementById('response');
 
       if (!input) {
-        responseDiv.innerHTML = "<p>⚠️ לא הוזן טקסט לשליחה</p>";
+        responseDiv.innerHTML += "<p>⚠️ לא הוזן טקסט לשליחה</p>";
         return;
       }
 
@@ -148,22 +148,28 @@
           body: JSON.stringify({ message: input })
         });
 
-        const data = await res.json();
+        const text = await res.text();
+
+        let parsed = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch (_) {
+          parsed = { text };
+        }
 
         responseDiv.innerHTML += `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
 
-        if (data.text) {
-          responseDiv.innerHTML += `<div style="margin: 10px 0;">${data.text}</div>`;
+        if (parsed.text) {
+          responseDiv.innerHTML += `<div style="margin: 10px 0;">${parsed.text}</div>`;
         }
 
-        if (data.audio_url) {
-          // רק אם יש קול – להפעיל אנימציה
+        if (parsed.audio_url) {
           responseDiv.innerHTML += `
             <div class="wave" id="wave">
               <span></span><span></span><span></span><span></span><span></span>
             </div>`;
 
-          const audio = new Audio(data.audio_url);
+          const audio = new Audio(parsed.audio_url);
           audio.play();
           audio.onended = () => {
             const wave = document.getElementById("wave");
@@ -171,8 +177,8 @@
           };
         }
 
-        if (!data.text && !data.audio_url) {
-          responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה מהשרת</p>`;
+        if (!parsed.text && !parsed.audio_url) {
+          responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה</p>`;
         }
 
       } catch (err) {
