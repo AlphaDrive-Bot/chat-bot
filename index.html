@@ -14,10 +14,11 @@
       text-align: center;
       padding: 30px 15px 120px;
       overflow-x: hidden;
+      font-size: 16px;
     }
 
     .title {
-      font-size: 22px;
+      font-size: 20px;
       margin-bottom: 30px;
     }
 
@@ -38,7 +39,7 @@
 
     .chat-container input {
       flex: 1;
-      font-size: 18px;
+      font-size: 16px;
       padding: 16px 10px;
       border: none;
       outline: none;
@@ -77,31 +78,7 @@
     #response {
       margin-top: 20px;
       margin-bottom: 80px;
-    }
-
-    .bubble {
-      width: 100%;
-      padding: 14px 18px;
-      margin: 10px 0;
-      border-radius: 14px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: break-word;
-      box-sizing: border-box;
       text-align: right;
-      font-size: 18px;
-    }
-
-    .user-bubble {
-      background-color: #444;
-      color: #fff;
-      direction: rtl;
-    }
-
-    .bot-bubble {
-      background-color: #1e1e1e;
-      color: #fff;
-      direction: rtl;
     }
 
     .fade-in {
@@ -141,8 +118,7 @@
 
     a {
       color: #4fc3f7;
-      text-decoration: none;
-      font-weight: bold;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -180,10 +156,7 @@
 
       if (!input) return;
 
-      const userMsg = document.createElement("div");
-      userMsg.className = "bubble user-bubble fade-in";
-      userMsg.innerText = input;
-      responseDiv.appendChild(userMsg);
+      responseDiv.innerHTML += `<div class="fade-in"><strong>אתה:</strong> ${input}</div>`;
 
       const thinking = document.createElement("div");
       thinking.id = "thinking";
@@ -215,20 +188,14 @@
         thinking.remove();
 
         if (parsed.text) {
-          const botMsg = document.createElement("div");
-          botMsg.className = "bubble bot-bubble fade-in";
-          botMsg.innerHTML = linkify(parsed.text);
-          responseDiv.appendChild(botMsg);
+          responseDiv.innerHTML += `<div class="fade-in"><strong>הסוכן:</strong> ${linkify(parsed.text)}</div>`;
         }
 
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 
       } catch (err) {
         thinking.remove();
-        const errorMsg = document.createElement("div");
-        errorMsg.className = "bubble bot-bubble fade-in";
-        errorMsg.innerText = `שגיאה: ${err.message}`;
-        responseDiv.appendChild(errorMsg);
+        responseDiv.innerHTML += `<div class="fade-in">🚫 שגיאה: ${err.message}</div>`;
       }
     }
 
