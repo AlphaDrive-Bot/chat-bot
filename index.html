@@ -12,6 +12,7 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 30px 15px 120px;
+      overflow-x: hidden;
     }
 
     .title {
@@ -84,9 +85,12 @@
       border-radius: 10px;
       display: inline-block;
       text-align: right;
-      max-width: 80%;
+      max-width: 90vw;
       white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
       direction: rtl;
+      box-sizing: border-box;
     }
 
     .fade-in {
@@ -127,7 +131,7 @@
     a {
       color: #4fc3f7;
       text-decoration: underline;
-      word-break: break-all;
+      word-break: break-word;
     }
   </style>
 </head>
