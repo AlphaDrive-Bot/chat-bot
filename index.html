@@ -4,20 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AlphaDrive Bot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
       background-color: #000;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       text-align: center;
       padding: 30px 15px 120px;
       overflow-x: hidden;
     }
 
-    .title {
-      font-size: 22px;
-      margin-bottom: 30px;
+    .logo {
+      margin-bottom: 20px;
     }
 
     .chat-container {
@@ -74,23 +74,35 @@
     }
 
     #response {
-      margin-top: 30px;
+      margin-top: 20px;
       margin-bottom: 80px;
     }
 
-    .bot-message {
-      margin: 10px 0;
-      background-color: #1e1e1e;
-      padding: 10px 15px;
-      border-radius: 10px;
-      display: inline-block;
-      text-align: right;
+    .bubble {
       max-width: 90vw;
+      padding: 12px 16px;
+      margin: 10px;
+      border-radius: 18px;
+      display: inline-block;
       white-space: pre-wrap;
-      word-wrap: break-word;
+      word-break: break-word;
       overflow-wrap: break-word;
-      direction: rtl;
       box-sizing: border-box;
+      text-align: right;
+    }
+
+    .user-bubble {
+      background-color: #4fc3f7;
+      color: #000;
+      margin-right: auto;
+      direction: rtl;
+    }
+
+    .bot-bubble {
+      background-color: #1e1e1e;
+      color: #fff;
+      margin-left: auto;
+      direction: rtl;
     }
 
     .fade-in {
@@ -131,13 +143,14 @@
     a {
       color: #4fc3f7;
       text-decoration: underline;
-      word-break: break-word;
     }
   </style>
 </head>
 <body>
 
-  <div class="title">שוחח עם הסוכן הדיגיטלי של AlphaDrive</div>
+  <div class="logo">
+    <img src="logo transpernt.png" alt="AlphaDrive Logo" style="max-height: 60px;" />
+  </div>
 
   <div id="response"></div>
 
@@ -167,18 +180,23 @@
       const input = text || inputEl.value.trim();
       const responseDiv = document.getElementById('response');
 
-      if (!input) {
-        responseDiv.innerHTML += "<p>⚠️ לא הוזן טקסט לשליחה</p>";
-        return;
-      }
+      if (!input) return;
 
-      responseDiv.innerHTML += `
-        <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
-        <div id="thinking">
-          ⏳ הסוכן חושב...
-          <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
-        </div>
+      // הצגת הודעת המשתמש
+      const userMsg = document.createElement("div");
+      userMsg.className = "bubble user-bubble fade-in";
+      userMsg.innerText = input;
+      responseDiv.appendChild(userMsg);
+
+      // הצגת אנימציה "חושב..."
+      const thinking = document.createElement("div");
+      thinking.id = "thinking";
+      thinking.innerHTML = `
+        ⏳ הסוכן חושב...
+        <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
       `;
+      responseDiv.appendChild(thinking);
+
       inputEl.value = "";
 
       try {
@@ -198,34 +216,23 @@
           parsed = { text: trimmed };
         }
 
-        const thinking = document.getElementById("thinking");
-        if (thinking) thinking.remove();
+        thinking.remove();
 
         if (parsed.text) {
-          const msg = document.createElement("div");
-          msg.className = "bot-message fade-in";
-          msg.innerHTML = linkify(parsed.text);
-          responseDiv.appendChild(msg);
-        }
-
-        if (parsed.audio_url) {
-          const wave = document.createElement("div");
-          wave.className = "wave";
-          wave.id = "wave";
-          wave.innerHTML = `<span></span><span></span><span></span><span></span><span></span>`;
-          responseDiv.appendChild(wave);
-
-          const audio = new Audio(parsed.audio_url);
-          audio.play();
-          audio.onended = () => wave.remove();
+          const botMsg = document.createElement("div");
+          botMsg.className = "bubble bot-bubble fade-in";
+          botMsg.innerHTML = linkify(parsed.text);
+          responseDiv.appendChild(botMsg);
         }
 
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 
       } catch (err) {
-        const thinking = document.getElementById("thinking");
-        if (thinking) thinking.remove();
-        responseDiv.innerHTML += `<p>🚫 שגיאה בשליחה: ${err.message}</p>`;
+        thinking.remove();
+        const errorMsg = document.createElement("div");
+        errorMsg.className = "bubble bot-bubble fade-in";
+        errorMsg.innerText = `שגיאה: ${err.message}`;
+        responseDiv.appendChild(errorMsg);
       }
     }
 
