@@ -148,13 +148,14 @@
           body: JSON.stringify({ message: input })
         });
 
-        const text = await res.text();
+        const raw = await res.text();
+        const trimmed = raw.trim();
 
         let parsed = null;
         try {
-          parsed = JSON.parse(text);
+          parsed = JSON.parse(trimmed);
         } catch (_) {
-          parsed = { text };
+          parsed = { text: trimmed };
         }
 
         responseDiv.innerHTML += `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
