@@ -77,6 +77,27 @@
       margin-bottom: 80px;
     }
 
+    .bot-message {
+      margin: 10px 0;
+      background-color: #1e1e1e;
+      padding: 10px 15px;
+      border-radius: 10px;
+      display: inline-block;
+      text-align: right;
+      max-width: 80%;
+      white-space: pre-wrap;
+      direction: rtl;
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
     .wave {
       display: flex;
       justify-content: center;
@@ -102,6 +123,12 @@
       0%, 100% { height: 10px; }
       50% { height: 30px; }
     }
+
+    a {
+      color: #4fc3f7;
+      text-decoration: underline;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -125,6 +152,12 @@
   </div>
 
   <script>
+    function linkify(text) {
+      return text.replace(/(https?:\/\/[^\s]+)/g, url => {
+        return `<a href="${url}" target="_blank">${url}</a>`;
+      });
+    }
+
     async function sendToBot(text = null) {
       const inputEl = document.getElementById('userInput');
       const input = text || inputEl.value.trim();
@@ -139,9 +172,7 @@
         <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
         <div id="thinking">
           ⏳ הסוכן חושב...
-          <div class="wave">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
+          <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
         </div>
       `;
       inputEl.value = "";
@@ -155,6 +186,7 @@
 
         const raw = await res.text();
         const trimmed = raw.trim();
+
         let parsed = null;
         try {
           parsed = JSON.parse(trimmed);
@@ -165,27 +197,23 @@
         const thinking = document.getElementById("thinking");
         if (thinking) thinking.remove();
 
-        responseDiv.innerHTML += `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
-
         if (parsed.text) {
-          responseDiv.innerHTML += `<div style="margin: 10px 0;">${parsed.text}</div>`;
+          const msg = document.createElement("div");
+          msg.className = "bot-message fade-in";
+          msg.innerHTML = linkify(parsed.text);
+          responseDiv.appendChild(msg);
         }
 
         if (parsed.audio_url) {
-          responseDiv.innerHTML += `
-            <div class="wave" id="wave">
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>`;
+          const wave = document.createElement("div");
+          wave.className = "wave";
+          wave.id = "wave";
+          wave.innerHTML = `<span></span><span></span><span></span><span></span><span></span>`;
+          responseDiv.appendChild(wave);
+
           const audio = new Audio(parsed.audio_url);
           audio.play();
-          audio.onended = () => {
-            const wave = document.getElementById("wave");
-            if (wave) wave.remove();
-          };
-        }
-
-        if (!parsed.text && !parsed.audio_url) {
-          responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה</p>`;
+          audio.onended = () => wave.remove();
         }
 
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
