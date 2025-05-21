@@ -137,7 +137,12 @@
 
       responseDiv.innerHTML += `
         <div style="margin-bottom:10px; font-weight:bold;">אתה: ${input}</div>
-        ⏳ הסוכן חושב...
+        <div id="thinking">
+          ⏳ הסוכן חושב...
+          <div class="wave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
       `;
       inputEl.value = "";
 
@@ -150,13 +155,15 @@
 
         const raw = await res.text();
         const trimmed = raw.trim();
-
         let parsed = null;
         try {
           parsed = JSON.parse(trimmed);
         } catch (_) {
           parsed = { text: trimmed };
         }
+
+        const thinking = document.getElementById("thinking");
+        if (thinking) thinking.remove();
 
         responseDiv.innerHTML += `<div style="margin-bottom:10px; font-weight:bold;">הסוכן:</div>`;
 
@@ -169,7 +176,6 @@
             <div class="wave" id="wave">
               <span></span><span></span><span></span><span></span><span></span>
             </div>`;
-
           const audio = new Audio(parsed.audio_url);
           audio.play();
           audio.onended = () => {
@@ -182,7 +188,11 @@
           responseDiv.innerHTML += `<p>😢 לא התקבלה תגובה</p>`;
         }
 
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+
       } catch (err) {
+        const thinking = document.getElementById("thinking");
+        if (thinking) thinking.remove();
         responseDiv.innerHTML += `<p>🚫 שגיאה בשליחה: ${err.message}</p>`;
       }
     }
