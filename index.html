@@ -215,8 +215,9 @@
         mediaRecorder.onstop = async function () {
           hideRecordingIndicator();
           const blob = new Blob(chunks, { type: 'audio/webm' });
+          const file = new File([blob], 'voice.webm', { type: 'audio/webm' });
           const formData = new FormData();
-          formData.append('file', blob, 'voice.webm');
+          formData.append('file', file);
           formData.append('message_type', 'voice');
           formData.append('source', 'mic');
 
