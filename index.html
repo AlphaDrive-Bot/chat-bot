@@ -29,50 +29,6 @@
       margin-bottom: 20px;
     }
 
-    #response {
-      text-align: right;
-      margin-bottom: 100px;
-      max-height: calc(100vh - 240px);
-      overflow-y: auto;
-      scroll-behavior: smooth;
-    }
-
-    .bubble {
-      max-width: 85%;
-      padding: 12px 16px;
-      margin: 10px;
-      border-radius: 16px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: break-word;
-      box-sizing: border-box;
-      text-align: right;
-      font-size: 15px;
-    }
-
-    .user-bubble {
-      background-color: #444;
-      color: #fff;
-      margin-right: auto;
-      direction: rtl;
-    }
-
-    .bot-bubble {
-      background-color: #1e1e1e;
-      color: #fff;
-      margin-left: auto;
-      direction: rtl;
-    }
-
-    .fade-in {
-      opacity: 0;
-      animation: fadeIn 0.4s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
     .chat-container {
       background-color: #e3e3e3;
       border-radius: 12px;
@@ -114,6 +70,7 @@
       justify-content: center;
       cursor: pointer;
       margin-left: 6px;
+      position: relative;
     }
 
     .mic-button svg, .send-button svg {
@@ -124,6 +81,51 @@
 
     .mic-button:hover, .send-button:hover {
       background-color: #f0f0f0;
+    }
+
+    #response {
+      margin-top: 20px;
+      margin-bottom: 100px;
+      text-align: right;
+      max-height: calc(100vh - 240px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      margin: 10px;
+      border-radius: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+      text-align: right;
+      font-size: 15px;
+    }
+
+    .user-bubble {
+      background-color: #444;
+      color: #fff;
+      margin-right: auto;
+      direction: rtl;
+    }
+
+    .bot-bubble {
+      background-color: #1e1e1e;
+      color: #fff;
+      margin-left: auto;
+      direction: rtl;
+    }
+
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
     }
 
     .wave {
@@ -163,12 +165,10 @@
   <div class="title">שוחח עם הסוכן הדיגיטלי</div>
   <div class="subtitle"><span style="color: #fff;">Alpha</span><span style="color: #4fc3f7;">-Drive</span></div>
 
-  <div id="response">
-    <div id="scroll-anchor"></div>
-  </div>
+  <div id="response"></div>
 
   <div class="chat-container">
-    <button class="mic-button" onclick="startRecording()" aria-label="הקלט קול">
+    <button class="mic-button" aria-label="הקלט קול">
       <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
         <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
       </svg>
@@ -182,23 +182,40 @@
   </div>
 
   <script>
-    let mediaRecorder, stream, chunks = [];
+    let mediaRecorder;
+    let stream;
+    let chunks = [];
+
+    const micButton = document.querySelector(".mic-button");
     const responseDiv = document.getElementById('response');
 
-    function showRecordingIndicator() {}
-    function hideRecordingIndicator() {}
+    function showRecordingIndicator() {
+      const indicator = document.createElement("div");
+      indicator.id = "recording-indicator";
+      indicator.className = "wave";
+      indicator.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
+      micButton.appendChild(indicator);
+    }
+
+    function hideRecordingIndicator() {
+      const indicator = document.getElementById("recording-indicator");
+      if (indicator) indicator.remove();
+    }
 
     async function startRecording() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorder = new MediaRecorder(stream);
         chunks = [];
 
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.onstop = async () => {
+        mediaRecorder.ondataavailable = function (e) {
+          chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async function () {
+          hideRecordingIndicator();
           const blob = new Blob(chunks, { type: 'audio/webm' });
           const file = new File([blob], 'voice.webm', { type: 'audio/webm' });
-
           const formData = new FormData();
           formData.append('file', file);
           formData.append('message_type', 'voice');
@@ -212,11 +229,17 @@
           scrollToBottom();
 
           const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-            method: "POST", body: formData
+            method: "POST",
+            body: formData
           });
 
           const raw = await res.text();
-          const parsed = raw.startsWith('{') ? JSON.parse(raw) : { text: raw };
+          let parsed = null;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (_) {
+            parsed = { text: raw };
+          }
 
           thinking.remove();
           if (parsed.text) {
@@ -226,14 +249,46 @@
             responseDiv.appendChild(botMsg);
           }
 
-          if (parsed.audio_url) new Audio(parsed.audio_url).play();
+          if (parsed.audio_url) {
+            new Audio(parsed.audio_url).play();
+          }
+
           scrollToBottom();
           stream.getTracks().forEach(track => track.stop());
         };
 
         mediaRecorder.start();
+        showRecordingIndicator();
       } catch (err) {
         responseDiv.innerHTML += `<p>❌ שגיאה בהקלטה: ${err.message}</p>`;
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }
+
+    micButton.addEventListener("mousedown", startRecording);
+    micButton.addEventListener("mouseup", stopRecording);
+    micButton.addEventListener("touchstart", startRecording);
+    micButton.addEventListener("touchend", stopRecording);
+
+    function linkify(text) {
+      return text.replace(/(https?:\/\/[^\s]+)/g, url => {
+        return `<a href="${url}" target="_blank">🔗 לחץ כאן</a>`;
+      });
+    }
+
+    function scrollToBottom() {
+      const shouldScroll =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+
+      if (shouldScroll) {
+        setTimeout(() => {
+          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+        }, 50);
       }
     }
 
@@ -256,47 +311,47 @@
 
       inputEl.value = "";
 
-      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input })
-      });
+      try {
+        const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
 
-      const raw = await res.text();
-      const parsed = raw.startsWith('{') ? JSON.parse(raw) : { text: raw };
+        const raw = await res.text();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(raw.trim());
+        } catch (_) {
+          parsed = { text: raw };
+        }
 
-      thinking.remove();
-      if (parsed.text) {
-        const botMsg = document.createElement("div");
-        botMsg.className = "bubble bot-bubble fade-in";
-        botMsg.innerHTML = linkify(parsed.text);
-        responseDiv.appendChild(botMsg);
+        thinking.remove();
+        if (parsed.text) {
+          const botMsg = document.createElement("div");
+          botMsg.className = "bubble bot-bubble fade-in";
+          botMsg.innerHTML = linkify(parsed.text);
+          responseDiv.appendChild(botMsg);
+        }
+
+        if (parsed.audio_url) {
+          const audio = new Audio(parsed.audio_url);
+          audio.play();
+        }
+
+        scrollToBottom();
+
+      } catch (err) {
+        thinking.remove();
+        responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
       }
-
-      if (parsed.audio_url) new Audio(parsed.audio_url).play();
-      scrollToBottom();
-    }
-
-    function scrollToBottom() {
-      const anchor = document.getElementById("scroll-anchor");
-      if (!anchor) return;
-      setTimeout(() => {
-        anchor.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 100);
     }
 
     document.getElementById('userInput').addEventListener("keydown", function (e) {
-      if (e.key === "Enter") sendToBot();
+      if (e.key === "Enter") {
+        sendToBot();
+      }
     });
-
-    function linkify(text) {
-      return text.replace(/(https?:\\/\\/[^\\s]+)/g, url =>
-        `<a href="${url}" target="_blank">🔗 לחץ כאן</a>`
-      );
-    }
-
-    window.addEventListener("resize", scrollToBottom);
   </script>
-
 </body>
 </html>
