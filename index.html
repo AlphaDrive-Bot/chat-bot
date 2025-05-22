@@ -16,19 +16,16 @@
       overflow-x: hidden;
       font-size: 14px;
     }
-
     .title {
       font-size: 22px;
       font-weight: bold;
       margin-bottom: 4px;
     }
-
     .subtitle {
       font-size: 22px;
       font-weight: bold;
       margin-bottom: 20px;
     }
-
     .chat-container {
       background-color: #e3e3e3;
       border-radius: 12px;
@@ -43,7 +40,6 @@
       transform: translateX(-50%);
       z-index: 9999;
     }
-
     .chat-container input {
       flex: 1;
       font-size: 14px;
@@ -54,11 +50,9 @@
       color: #000;
       text-align: right;
     }
-
     .chat-container input::placeholder {
       color: #888;
     }
-
     .mic-button, .send-button {
       background-color: #fff;
       border: none;
@@ -72,17 +66,14 @@
       margin-left: 6px;
       position: relative;
     }
-
     .mic-button svg, .send-button svg {
       width: 20px;
       height: 20px;
       fill: #555;
     }
-
     .mic-button:hover, .send-button:hover {
       background-color: #f0f0f0;
     }
-
     #response {
       margin-top: 20px;
       margin-bottom: 100px;
@@ -91,7 +82,6 @@
       overflow-y: auto;
       scroll-behavior: smooth;
     }
-
     .bubble {
       max-width: 85%;
       padding: 12px 16px;
@@ -104,36 +94,30 @@
       text-align: right;
       font-size: 15px;
     }
-
     .user-bubble {
       background-color: #444;
       color: #fff;
       margin-right: auto;
       direction: rtl;
     }
-
     .bot-bubble {
       background-color: #1e1e1e;
       color: #fff;
       margin-left: auto;
       direction: rtl;
     }
-
     .fade-in {
       opacity: 0;
       animation: fadeIn 0.4s ease forwards;
     }
-
     @keyframes fadeIn {
       to { opacity: 1; }
     }
-
     .wave {
       display: flex;
       justify-content: center;
       margin-top: 10px;
     }
-
     .wave span {
       display: block;
       width: 6px;
@@ -143,17 +127,14 @@
       border-radius: 4px;
       animation: waveAnim 1s infinite ease-in-out;
     }
-
     .wave span:nth-child(2) { animation-delay: -0.2s; }
     .wave span:nth-child(3) { animation-delay: -0.4s; }
     .wave span:nth-child(4) { animation-delay: -0.6s; }
     .wave span:nth-child(5) { animation-delay: -0.8s; }
-
     @keyframes waveAnim {
       0%, 100% { height: 10px; }
       50% { height: 30px; }
     }
-
     a {
       color: #4fc3f7;
       text-decoration: underline;
@@ -233,28 +214,7 @@
             body: formData
           });
 
-          const raw = await res.text();
-          let parsed = null;
-          try {
-            parsed = JSON.parse(raw);
-          } catch (_) {
-            parsed = { text: raw };
-          }
-
-          thinking.remove();
-          if (parsed.text) {
-            const botMsg = document.createElement("div");
-            botMsg.className = "bubble bot-bubble fade-in";
-            botMsg.innerHTML = linkify(parsed.text);
-            responseDiv.appendChild(botMsg);
-          }
-
-          if (parsed.audio_url) {
-            new Audio(parsed.audio_url).play();
-          }
-
-          scrollToBottom();
-          stream.getTracks().forEach(track => track.stop());
+          await handleResponse(res);
         };
 
         mediaRecorder.start();
@@ -282,14 +242,9 @@
     }
 
     function scrollToBottom() {
-      const shouldScroll =
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-
-      if (shouldScroll) {
-        setTimeout(() => {
-          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-        }, 50);
-      }
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      }, 100);
     }
 
     async function sendToBot(text = null) {
@@ -318,33 +273,53 @@
           body: JSON.stringify({ message: input })
         });
 
-        const raw = await res.text();
-        let parsed = null;
-        try {
-          parsed = JSON.parse(raw.trim());
-        } catch (_) {
-          parsed = { text: raw };
-        }
-
-        thinking.remove();
-        if (parsed.text) {
-          const botMsg = document.createElement("div");
-          botMsg.className = "bubble bot-bubble fade-in";
-          botMsg.innerHTML = linkify(parsed.text);
-          responseDiv.appendChild(botMsg);
-        }
-
-        if (parsed.audio_url) {
-          const audio = new Audio(parsed.audio_url);
-          audio.play();
-        }
-
-        scrollToBottom();
-
+        await handleResponse(res);
       } catch (err) {
         thinking.remove();
         responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
       }
+    }
+
+    async function handleResponse(res) {
+      const thinking = document.getElementById("thinking");
+      const contentType = res.headers.get("Content-Type");
+
+      if (contentType && contentType.includes("audio")) {
+        const blob = await res.blob();
+        thinking.remove();
+        const audioUrl = URL.createObjectURL(blob);
+        new Audio(audioUrl).play();
+
+        const botMsg = document.createElement("div");
+        botMsg.className = "bubble bot-bubble fade-in";
+        botMsg.innerHTML = "🔊 הופעלה תשובה קולית.";
+        responseDiv.appendChild(botMsg);
+        scrollToBottom();
+        return;
+      }
+
+      const raw = await res.text();
+      let parsed = null;
+      try {
+        parsed = JSON.parse(raw.trim());
+      } catch (_) {
+        parsed = { text: raw };
+      }
+
+      thinking.remove();
+      if (parsed.text) {
+        const botMsg = document.createElement("div");
+        botMsg.className = "bubble bot-bubble fade-in";
+        botMsg.innerHTML = linkify(parsed.text);
+        responseDiv.appendChild(botMsg);
+      }
+
+      if (parsed.audio_url) {
+        const audio = new Audio(parsed.audio_url);
+        audio.play();
+      }
+
+      scrollToBottom();
     }
 
     document.getElementById('userInput').addEventListener("keydown", function (e) {
