@@ -264,6 +264,58 @@
       if (e.key === "Enter") sendToBot();
     });
   });
+
+let mediaRecorder;
+let audioChunks = [];
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
+
+  mediaRecorder.ondataavailable = event => {
+    audioChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+    formData.append('message_type', 'voice');
+    formData.append('source', 'mic');
+
+    const thinking = document.createElement("div");
+    thinking.id = "thinking";
+    thinking.innerHTML = `⏳ הסוכן חושב...
+      <div class="speaking-indicator"><span></span><span></span><span></span><span></span><span></span></div>`;
+    responseDiv.appendChild(thinking);
+    scrollToBottom();
+
+    try {
+      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+        method: "POST",
+        body: formData
+      });
+      await handleResponse(res);
+    } catch (err) {
+      thinking.remove();
+      responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
+    }
+  };
+
+  mediaRecorder.start();
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+}
+
+micButton.addEventListener("mousedown", startRecording);
+micButton.addEventListener("mouseup", stopRecording);
+micButton.addEventListener("touchstart", startRecording);
+micButton.addEventListener("touchend", stopRecording);
 </script>
 </body>
 </html>
