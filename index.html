@@ -53,7 +53,7 @@
     .chat-container input::placeholder {
       color: #888;
     }
-    .mic-button, .smart-button {
+    .mic-button, .send-button {
       background-color: #fff;
       border: none;
       border-radius: 50%;
@@ -63,21 +63,13 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      margin: 0 6px;
+      margin-left: 6px;
       position: relative;
     }
-    .mic-button svg, .smart-button svg {
+    .mic-button svg, .send-button svg {
       width: 20px;
       height: 20px;
       fill: #555;
-    }
-    .smart-button.recording {
-      animation: pulse 1.2s infinite;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.6); }
-      70% { box-shadow: 0 0 0 10px rgba(79, 195, 247, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); }
     }
     #response {
       margin-top: 20px;
@@ -94,7 +86,6 @@
       border-radius: 16px;
       white-space: pre-wrap;
       word-break: break-word;
-      overflow-wrap: break-word;
       box-sizing: border-box;
       text-align: right;
       font-size: 15px;
@@ -111,12 +102,29 @@
       margin-left: auto;
       direction: rtl;
     }
-    .fade-in {
-      opacity: 0;
-      animation: fadeIn 0.4s ease forwards;
+    .smart-chat-button {
+      position: fixed;
+      left: 20px;
+      bottom: 100px;
+      background-color: #4db2ff;
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 26px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      cursor: pointer;
+      z-index: 99999;
+      animation: pulse 1.5s infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    @keyframes fadeIn {
-      to { opacity: 1; }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(77,178,255, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(77,178,255, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(77,178,255, 0); }
     }
     .speaking-indicator {
       display: flex;
@@ -149,95 +157,101 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
   <div class="chat-container">
-    <button class="mic-button" id="micBtn" aria-label="הקלט קול">
+    <button class="mic-button" aria-label="הקלט קול">
       <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
         <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
       </svg>
     </button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="smart-button" id="continuousChatButton" aria-label="שיחה שוטפת">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="24" width="24">
-        <path d="M12 3C7.03 3 3 6.58 3 11c0 1.77.77 3.39 2.04 4.69L3 21l5.52-2.13C9.66 19.59 10.8 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z" fill="#555"/>
+    <button class="send-button" aria-label="שלח">
+      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="#555">
+        <path d="M2 10L18 2l-4 8 4 8z"/>
       </svg>
     </button>
   </div>
-  <script>
-    let continuousMode = false;
-    let mediaRecorder;
-    let audioChunks = [];
+  <button class="smart-chat-button" id="smartChatButton" title="שיחה שוטפת">
+    <svg id="smartIcon" xmlns="http://www.w3.org/2000/svg" height="28" width="28" viewBox="0 0 24 24" fill="#fff">
+      <path d="M12 3a9 9 0 1 1-6.36 15.36L3 21l2.64-2.64A9 9 0 0 1 12 3z"/>
+    </svg>
+  </button>
+<script>
+const responseDiv = document.getElementById("response");
+function showSpeakingIndicator() {
+  document.getElementById("speaking-indicator").style.display = "flex";
+}
+function hideSpeakingIndicator() {
+  document.getElementById("speaking-indicator").style.display = "none";
+}
+function scrollToBottom() {
+  setTimeout(() => {
+    responseDiv.scrollTop = responseDiv.scrollHeight;
+  }, 100);
+}
 
-    const micButton = document.getElementById("micBtn");
-    const smartButton = document.getElementById("continuousChatButton");
-    const speakingIndicator = document.getElementById("speaking-indicator");
+let smartMode = false;
+document.getElementById("smartChatButton").addEventListener("click", () => {
+  smartMode = !smartMode;
+  document.getElementById("smartIcon").innerHTML = smartMode
+    ? '<path d="M6 19h12v2H6v-2zm0-6h12v2H6v-2zm0-6h12v2H6V7z"/>'
+    : '<path d="M12 3a9 9 0 1 1-6.36 15.36L3 21l2.64-2.64A9 9 0 0 1 12 3z"/>';
+  if (smartMode) startSmartConversation();
+});
 
-    function showSpeakingIndicator() {
-      speakingIndicator.style.display = "flex";
-    }
-    function hideSpeakingIndicator() {
-      speakingIndicator.style.display = "none";
-    }
+async function startSmartConversation() {
+  while (smartMode) {
+    await recordUntilSilence();
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
 
-    function handleAudioResponse(blob) {
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
+async function recordUntilSilence() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const recorder = new MediaRecorder(stream);
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioContext.createMediaStreamSource(stream);
+  const processor = audioContext.createScriptProcessor(2048, 1, 1);
+  let chunks = [], silenceStart = null;
+  const threshold = 0.01, maxSilence = 1500;
+
+  source.connect(processor);
+  processor.connect(audioContext.destination);
+
+  processor.onaudioprocess = (e) => {
+    const input = e.inputBuffer.getChannelData(0);
+    const rms = Math.sqrt(input.reduce((sum, val) => sum + val * val, 0) / input.length);
+    if (rms < threshold) {
+      if (!silenceStart) silenceStart = Date.now();
+      else if (Date.now() - silenceStart > maxSilence && recorder.state === "recording") recorder.stop();
+    } else silenceStart = null;
+  };
+
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = async () => {
+    processor.disconnect(); source.disconnect(); audioContext.close();
+    stream.getTracks().forEach(track => track.stop());
+    const blob = new Blob(chunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', blob, 'recording.webm');
+    formData.append('message_type', 'voice');
+    formData.append('source', 'smart');
+    const thinking = document.createElement("div");
+    thinking.id = "thinking";
+    thinking.innerHTML = `⏳ הסוכן חושב...<div class="speaking-indicator"><span></span><span></span><span></span><span></span><span></span></div>`;
+    responseDiv.appendChild(thinking);
+    scrollToBottom();
+    try {
+      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", { method: "POST", body: formData });
+      const audio = new Audio(URL.createObjectURL(await res.blob()));
       showSpeakingIndicator();
       audio.play();
-      audio.onended = () => {
-        hideSpeakingIndicator();
-        if (continuousMode) startRecording();
-      };
+      audio.onended = hideSpeakingIndicator;
+    } catch (err) {
+      thinking.remove();
+      responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
     }
-
-    async function sendAudio(blob) {
-      const formData = new FormData();
-      formData.append('file', blob, 'recording.webm');
-      formData.append('message_type', 'voice');
-      formData.append('source', continuousMode ? 'continuous' : 'mic');
-      try {
-        const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-          method: "POST",
-          body: formData
-        });
-        const audioBlob = await res.blob();
-        handleAudioResponse(audioBlob);
-      } catch (err) {
-        hideSpeakingIndicator();
-        console.error('שגיאה בשליחה:', err);
-      }
-    }
-
-    function startRecording() {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          sendAudio(audioBlob);
-        };
-        mediaRecorder.start();
-        setTimeout(() => {
-          if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        }, 6000);
-      });
-    }
-
-    micButton.addEventListener("click", () => {
-      if (!mediaRecorder || mediaRecorder.state === "inactive") {
-        startRecording();
-      }
-    });
-
-    smartButton.addEventListener("click", () => {
-      continuousMode = !continuousMode;
-      if (continuousMode) {
-        startRecording();
-        smartButton.classList.add("recording");
-      } else {
-        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        smartButton.classList.remove("recording");
-      }
-    });
-  </script>
+  };
+  recorder.start();
+}
+</script>
 </body>
 </html>
