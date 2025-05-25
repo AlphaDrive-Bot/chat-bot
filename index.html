@@ -66,9 +66,18 @@
       margin: 0 6px;
       position: relative;
     }
-    .mic-button svg, .smart-button img {
+    .mic-button svg, .smart-button svg {
       width: 20px;
       height: 20px;
+      fill: #555;
+    }
+    .smart-button.recording {
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(79, 195, 247, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); }
     }
     #response {
       margin-top: 20px;
@@ -102,8 +111,13 @@
       margin-left: auto;
       direction: rtl;
     }
-    .fade-in { opacity: 0; animation: fadeIn 0.4s ease forwards; }
-    @keyframes fadeIn { to { opacity: 1; } }
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
     .speaking-indicator {
       display: flex;
       justify-content: center;
@@ -135,133 +149,95 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
   <div class="chat-container">
-    <button class="mic-button" aria-label="הקלט קול">
+    <button class="mic-button" id="micBtn" aria-label="הקלט קול">
       <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
         <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
       </svg>
     </button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="smart-button" aria-label="שיחה שוטפת">
-      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAMAAAC7IEhfAAAASFBMVEVHcEz///////////////////////////////////////////////////////////////////////////////////////////////////+WuxFBAAAAIXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGCEyABru3wAAARFJREFUOMuNk1kSgyAMRKcYJWX7v+9cVROonOOpZfAwOwB0kFQuY0okbmgh3cE2zLDoA0S/kwcvkoKhc3+Wb4thztJw1Ad4ncs+knELWvdtPuxMYbD52TBLQAI3ImSAsMd8YTrZwj8g5M97f3zS6gQq3k+loQQHjpvfgHRuwfTyjKknSRAm4BEbcIHsEzRi4Axeb0ZBQjh+BwTCthKqt0sUNp9KZ3DwCdn7MXTpmW4tAAAAAElFTkSuQmCC" alt="שיחה שוטפת" />
+    <button class="smart-button" id="continuousChatButton" aria-label="שיחה שוטפת">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" height="24" width="24">
+        <path d="M12 3C7.03 3 3 6.58 3 11c0 1.77.77 3.39 2.04 4.69L3 21l5.52-2.13C9.66 19.59 10.8 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z" fill="#555"/>
+      </svg>
     </button>
   </div>
   <script>
-    const micButton = document.querySelector(".mic-button");
-    const smartButton = document.querySelector(".smart-button");
-    const inputEl = document.getElementById("userInput");
-    const responseDiv = document.getElementById("response");
-
     let continuousMode = false;
-    let recording = false;
     let mediaRecorder;
     let audioChunks = [];
 
-    async function startRecording() {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunks, { type: 'audio/webm' });
-        const formData = new FormData();
-        formData.append('file', blob, 'recording.webm');
-        formData.append('message_type', 'voice');
-        formData.append('source', 'continuous');
-
-        const thinking = document.createElement("div");
-        thinking.id = "thinking";
-        thinking.innerHTML = `⏳ הסוכן חושב...<div class='speaking-indicator'><span></span><span></span><span></span><span></span><span></span></div>`;
-        responseDiv.appendChild(thinking);
-        scrollToBottom();
-
-        try {
-          const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-            method: "POST",
-            body: formData
-          });
-          await handleResponse(res);
-        } catch (err) {
-          thinking.remove();
-          responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
-        }
-      };
-      mediaRecorder.start();
-      setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
-    }
-
-    async function handleResponse(res) {
-      const thinking = document.getElementById("thinking");
-      const contentType = res.headers.get("Content-Type");
-      thinking.remove();
-
-      if (contentType && contentType.includes("audio")) {
-        const blob = await res.blob();
-        const audioUrl = URL.createObjectURL(blob);
-        showSpeakingIndicator();
-        const audio = new Audio(audioUrl);
-        audio.play();
-        audio.onended = () => {
-          hideSpeakingIndicator();
-          if (continuousMode) startRecording();
-        };
-        return;
-      }
-
-      const raw = await res.text();
-      let parsed = null;
-      try {
-        parsed = JSON.parse(raw.trim());
-      } catch (_) {
-        parsed = { text: raw };
-      }
-
-      if (parsed.text) {
-        const botMsg = document.createElement("div");
-        botMsg.className = "bubble bot-bubble fade-in";
-        botMsg.innerHTML = parsed.text;
-        responseDiv.appendChild(botMsg);
-      }
-
-      if (parsed.audio_url) {
-        const audio = new Audio(parsed.audio_url);
-        showSpeakingIndicator();
-        audio.play();
-        audio.onended = () => {
-          hideSpeakingIndicator();
-          if (continuousMode) startRecording();
-        };
-      }
-      scrollToBottom();
-    }
+    const micButton = document.getElementById("micBtn");
+    const smartButton = document.getElementById("continuousChatButton");
+    const speakingIndicator = document.getElementById("speaking-indicator");
 
     function showSpeakingIndicator() {
-      document.getElementById("speaking-indicator").style.display = "flex";
+      speakingIndicator.style.display = "flex";
     }
     function hideSpeakingIndicator() {
-      document.getElementById("speaking-indicator").style.display = "none";
-    }
-    function scrollToBottom() {
-      setTimeout(() => {
-        responseDiv.scrollTop = responseDiv.scrollHeight;
-      }, 100);
+      speakingIndicator.style.display = "none";
     }
 
-    smartButton.addEventListener("click", () => {
-      if (!continuousMode) {
-        continuousMode = true;
+    function handleAudioResponse(blob) {
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      showSpeakingIndicator();
+      audio.play();
+      audio.onended = () => {
+        hideSpeakingIndicator();
+        if (continuousMode) startRecording();
+      };
+    }
+
+    async function sendAudio(blob) {
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.webm');
+      formData.append('message_type', 'voice');
+      formData.append('source', continuousMode ? 'continuous' : 'mic');
+      try {
+        const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+          method: "POST",
+          body: formData
+        });
+        const audioBlob = await res.blob();
+        handleAudioResponse(audioBlob);
+      } catch (err) {
+        hideSpeakingIndicator();
+        console.error('שגיאה בשליחה:', err);
+      }
+    }
+
+    function startRecording() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          sendAudio(audioBlob);
+        };
+        mediaRecorder.start();
+        setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        }, 6000);
+      });
+    }
+
+    micButton.addEventListener("click", () => {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") {
         startRecording();
-        smartButton.style.boxShadow = '0 0 0 3px #4fc3f7';
-      } else {
-        continuousMode = false;
-        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        smartButton.style.boxShadow = 'none';
       }
     });
 
-    micButton.addEventListener("mousedown", () => { recording = true; startRecording(); });
-    micButton.addEventListener("mouseup", () => { if (recording) mediaRecorder.stop(); recording = false; });
-    micButton.addEventListener("touchstart", () => { recording = true; startRecording(); });
-    micButton.addEventListener("touchend", () => { if (recording) mediaRecorder.stop(); recording = false; });
+    smartButton.addEventListener("click", () => {
+      continuousMode = !continuousMode;
+      if (continuousMode) {
+        startRecording();
+        smartButton.classList.add("recording");
+      } else {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        smartButton.classList.remove("recording");
+      }
+    });
   </script>
 </body>
 </html>
