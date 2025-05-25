@@ -53,7 +53,7 @@
     .chat-container input::placeholder {
       color: #888;
     }
-    .mic-button, .send-button {
+    .mic-button, .send-button, .smart-button {
       background-color: #fff;
       border: none;
       border-radius: 50%;
@@ -64,9 +64,8 @@
       justify-content: center;
       cursor: pointer;
       margin-left: 6px;
-      position: relative;
     }
-    .mic-button svg, .send-button svg {
+    .mic-button svg, .send-button svg, .smart-button svg {
       width: 20px;
       height: 20px;
       fill: #555;
@@ -102,62 +101,34 @@
       margin-left: auto;
       direction: rtl;
     }
-    .smart-chat-button {
+    .indicator {
       position: fixed;
-      left: 20px;
-      bottom: 100px;
-      background-color: #4db2ff;
-      border: none;
-      color: white;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      font-size: 26px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      cursor: pointer;
-      z-index: 99999;
-      animation: pulse 1.5s infinite;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(77,178,255, 0.7); }
-      70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(77,178,255, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(77,178,255, 0); }
-    }
-    .animation-listening, .animation-speaking {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      top: 10px;
+      right: 10px;
       z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .animation-listening::before {
-      content: "";
-      width: 16px;
-      height: 16px;
+    .listening-dot {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: #4caf50;
-      box-shadow: 0 0 10px 2px #4caf50;
-      animation: blink 1s infinite;
+      animation: blink 1.2s infinite;
     }
-    .animation-speaking span {
+    .speaking-bars span {
       width: 4px;
-      height: 14px;
+      height: 10px;
+      background: #03a9f4;
       margin: 0 1px;
-      background: #2196f3;
-      animation: bounce 1s infinite ease-in-out;
+      animation: bounce 1.2s infinite ease-in-out;
     }
-    .animation-speaking span:nth-child(2) { animation-delay: 0.2s; }
-    .animation-speaking span:nth-child(3) { animation-delay: 0.4s; }
+    .speaking-bars span:nth-child(2) { animation-delay: -0.2s; }
+    .speaking-bars span:nth-child(3) { animation-delay: -0.4s; }
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+      50% { opacity: 0.3; }
     }
     @keyframes bounce {
       0%, 100% { transform: scaleY(1); }
@@ -168,125 +139,169 @@
 <body>
   <div class="title">שוחח עם הסוכן הדיגיטלי</div>
   <div class="subtitle"><span style="color: #fff;">Alpha</span><span style="color: #4fc3f7;">-Drive</span></div>
+  <div id="indicator" class="indicator"></div>
   <div id="response"></div>
-  <div id="speaking-indicator" class="animation-speaking" style="display: none;">
-    <span></span><span></span><span></span>
-  </div>
-  <div id="listening-indicator" class="animation-listening" style="display: none;"></div>
   <div class="chat-container">
-    <button class="mic-button" aria-label="הקלט קול">
-      <svg xmlns="http://www.w3.org/2000/svg" height="22" width="22" viewBox="0 0 24 24">
-        <path d="M12 14q-1.25 0-2.125-.875T9 11V5q0-1.25.875-2.125T12 2q1.25 0 2.125.875T15 5v6q0 1.25-.875 2.125T12 14Zm-1 7v-3.1q-2.9-.35-4.95-2.525Q4 13.2 4 10h2q0 2.5 1.75 4.25T12 16q2.5 0 4.25-1.75T18 10h2q0 3.2-2.05 5.375T13 17.9V21Z"/>
-      </svg>
-    </button>
+    <button class="mic-button" id="micBtn">🎤</button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="send-button" id="sendBtn" aria-label="שלח" style="display: none;">
-      <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" fill="#555">
-        <path d="M2 10L18 2l-4 8 4 8z"/>
-      </svg>
-    </button>
+    <button class="send-button" id="sendBtn" style="display:none">✈️</button>
+    <button class="smart-button" id="smartBtn">💬</button>
   </div>
-  <button class="smart-chat-button" id="smartChatButton" title="שיחה שוטפת">
-    <svg id="smartIcon" xmlns="http://www.w3.org/2000/svg" height="28" width="28" viewBox="0 0 24 24" fill="#fff">
-      <path d="M12 3a9 9 0 1 1-6.36 15.36L3 21l2.64-2.64A9 9 0 0 1 12 3z"/>
-    </svg>
-  </button>
 <script>
+const responseDiv = document.getElementById("response");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
+const micBtn = document.getElementById("micBtn");
+const smartBtn = document.getElementById("smartBtn");
+const indicator = document.getElementById("indicator");
+
 userInput.addEventListener("input", () => {
   sendBtn.style.display = userInput.value.trim() ? "inline-flex" : "none";
 });
 
-let smartMode = false;
-let isWaitingForResponse = false;
-const smartBtn = document.getElementById("smartChatButton");
-const smartIcon = document.getElementById("smartIcon");
-const listening = document.getElementById("listening-indicator");
-const speaking = document.getElementById("speaking-indicator");
-
-smartBtn.addEventListener("click", () => {
-  smartMode = !smartMode;
-  if (smartMode) {
-    smartIcon.innerHTML = '<path d="M6 19h12v2H6v-2zm0-6h12v2H6v-2zm0-6h12v2H6V7z"/>';
-    startSmartLoop();
-  } else {
-    smartIcon.innerHTML = '<path d="M12 3a9 9 0 1 1-6.36 15.36L3 21l2.64-2.64A9 9 0 0 1 12 3z"/>';
-  }
+sendBtn.addEventListener("click", () => sendToBot());
+userInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendToBot();
 });
 
-async function startSmartLoop() {
-  while (smartMode) {
-    if (isWaitingForResponse) {
-      await new Promise(r => setTimeout(r, 300));
-      continue;
-    }
-    await recordWithSilence();
-    await new Promise(r => setTimeout(r, 500));
+function addBubble(text, className) {
+  const div = document.createElement("div");
+  div.className = `bubble ${className}`;
+  div.innerText = text;
+  responseDiv.appendChild(div);
+  responseDiv.scrollTop = responseDiv.scrollHeight;
+}
+
+async function sendToBot(text = null) {
+  const input = text || userInput.value.trim();
+  if (!input) return;
+  addBubble(input, "user-bubble");
+  userInput.value = "";
+  sendBtn.style.display = "none";
+  setIndicator("thinking");
+  try {
+    const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: input })
+    });
+    clearIndicator();
+    const data = await res.text();
+    addBubble(data, "bot-bubble");
+  } catch (e) {
+    clearIndicator();
+    alert("שגיאה בשליחה");
   }
 }
 
-async function recordWithSilence() {
+function setIndicator(mode) {
+  indicator.innerHTML = "";
+  if (mode === "listening") {
+    const dot = document.createElement("div");
+    dot.className = "listening-dot";
+    indicator.appendChild(dot);
+  } else if (mode === "speaking") {
+    const bars = document.createElement("div");
+    bars.className = "speaking-bars";
+    for (let i = 0; i < 3; i++) bars.appendChild(document.createElement("span"));
+    indicator.appendChild(bars);
+  } else if (mode === "thinking") {
+    indicator.innerText = "⏳";
+  }
+}
+function clearIndicator() {
+  indicator.innerHTML = "";
+}
+
+let mediaRecorder;
+let chunks = [];
+
+micBtn.addEventListener("mousedown", startRecording);
+micBtn.addEventListener("mouseup", stopRecording);
+
+async function startRecording() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const recorder = new MediaRecorder(stream);
-  const ctx = new AudioContext();
-  const source = ctx.createMediaStreamSource(stream);
-  const processor = ctx.createScriptProcessor(2048, 1, 1);
-  let chunks = [], silenceStart = null;
-  const threshold = 0.01, maxSilence = 1500;
-
-  source.connect(processor);
-  processor.connect(ctx.destination);
-  listening.style.display = "flex";
-
-  processor.onaudioprocess = (e) => {
-    const input = e.inputBuffer.getChannelData(0);
-    const rms = Math.sqrt(input.reduce((s, x) => s + x * x, 0) / input.length);
-    if (rms < threshold) {
-      if (!silenceStart) silenceStart = Date.now();
-      else if (Date.now() - silenceStart > maxSilence && recorder.state === "recording") recorder.stop();
-    } else silenceStart = null;
-  };
-
-  recorder.ondataavailable = e => chunks.push(e.data);
-
-  recorder.onstop = async () => {
-    processor.disconnect(); source.disconnect(); ctx.close();
-    stream.getTracks().forEach(t => t.stop());
-    listening.style.display = "none";
+  mediaRecorder = new MediaRecorder(stream);
+  chunks = [];
+  mediaRecorder.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.onstop = async () => {
     const blob = new Blob(chunks, { type: 'audio/webm' });
     const formData = new FormData();
     formData.append('file', blob, 'recording.webm');
     formData.append('message_type', 'voice');
-    formData.append('source', 'smart');
-
+    setIndicator("thinking");
     try {
-      isWaitingForResponse = true;
-      speaking.style.display = "flex";
       const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
         method: "POST",
         body: formData
       });
+      clearIndicator();
       const audio = new Audio(URL.createObjectURL(await res.blob()));
+      setIndicator("speaking");
       audio.play();
-      audio.onended = () => {
-        speaking.style.display = "none";
-        isWaitingForResponse = false;
-      };
-      setTimeout(() => {
-        if (isWaitingForResponse) {
-          speaking.style.display = "none";
-          isWaitingForResponse = false;
-        }
-      }, 15000);
+      audio.onended = clearIndicator;
     } catch (e) {
-      console.error("שגיאה: ", e);
-      isWaitingForResponse = false;
-      speaking.style.display = "none";
+      clearIndicator();
+      alert("שגיאה בשליחת ההקלטה");
     }
   };
+  mediaRecorder.start();
+  setIndicator("listening");
+}
 
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+}
+
+let smartActive = false;
+smartBtn.addEventListener("click", () => {
+  smartActive = !smartActive;
+  smartBtn.textContent = smartActive ? "⏹️" : "💬";
+  if (smartActive) loopSmart();
+});
+
+async function loopSmart() {
+  while (smartActive) {
+    await smartOnce();
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
+
+async function smartOnce() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const recorder = new MediaRecorder(stream);
+  const audioChunks = [];
+  recorder.ondataavailable = e => audioChunks.push(e.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', blob, 'recording.webm');
+    formData.append('message_type', 'voice');
+    setIndicator("thinking");
+    try {
+      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+        method: "POST",
+        body: formData
+      });
+      clearIndicator();
+      const audio = new Audio(URL.createObjectURL(await res.blob()));
+      setIndicator("speaking");
+      audio.play();
+      await new Promise(r => {
+        audio.onended = r;
+        setTimeout(r, 15000);
+      });
+      clearIndicator();
+    } catch (e) {
+      clearIndicator();
+    }
+  };
   recorder.start();
+  setIndicator("listening");
+  setTimeout(() => recorder.stop(), 5000);
 }
 </script>
 </body>
