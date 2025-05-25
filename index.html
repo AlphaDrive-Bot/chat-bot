@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AlphaDrive Bot</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
@@ -50,9 +49,6 @@
       color: #000;
       text-align: right;
     }
-    .chat-container input::placeholder {
-      color: #888;
-    }
     .mic-button, .send-button, .smart-button {
       background-color: #fff;
       border: none;
@@ -64,11 +60,7 @@
       justify-content: center;
       cursor: pointer;
       margin-left: 6px;
-    }
-    .mic-button svg, .send-button svg, .smart-button svg {
-      width: 20px;
-      height: 20px;
-      fill: #555;
+      font-size: 20px;
     }
     #response {
       margin-top: 20px;
@@ -85,7 +77,6 @@
       border-radius: 16px;
       white-space: pre-wrap;
       word-break: break-word;
-      box-sizing: border-box;
       text-align: right;
       font-size: 15px;
     }
@@ -93,128 +84,96 @@
       background-color: #444;
       color: #fff;
       margin-right: auto;
-      direction: rtl;
     }
     .bot-bubble {
       background-color: #1e1e1e;
       color: #fff;
       margin-left: auto;
-      direction: rtl;
     }
-    .indicator {
+    .waves {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 10000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #4caf50, transparent);
+      animation: wave 1.2s linear infinite;
+      display: none;
+    }
+    .speaking-indicator {
+      position: fixed;
+      top: 12px;
+      left: 12px;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      gap: 4px;
+      height: 16px;
     }
-    .listening-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #4caf50;
-      animation: blink 1.2s infinite;
-    }
-    .speaking-bars span {
+    .speaking-indicator span {
       width: 4px;
-      height: 10px;
+      height: 100%;
       background: #03a9f4;
-      margin: 0 1px;
       animation: bounce 1.2s infinite ease-in-out;
     }
-    .speaking-bars span:nth-child(2) { animation-delay: -0.2s; }
-    .speaking-bars span:nth-child(3) { animation-delay: -0.4s; }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
+    .speaking-indicator span:nth-child(2) { animation-delay: -0.2s; }
+    .speaking-indicator span:nth-child(3) { animation-delay: -0.4s; }
     @keyframes bounce {
       0%, 100% { transform: scaleY(1); }
-      50% { transform: scaleY(1.8); }
+      50% { transform: scaleY(1.6); }
+    }
+    @keyframes wave {
+      0% { background-position: 0 0; }
+      100% { background-position: 100% 0; }
     }
   </style>
 </head>
 <body>
   <div class="title">שוחח עם הסוכן הדיגיטלי</div>
-  <div class="subtitle"><span style="color: #fff;">Alpha</span><span style="color: #4fc3f7;">-Drive</span></div>
-  <div id="indicator" class="indicator"></div>
+  <div class="subtitle">Alpha<span style="color: #4fc3f7;">-Drive</span></div>
+  <div id="waves" class="waves"></div>
+  <div id="speakingIndicator" class="speaking-indicator" style="display:none;">
+    <span></span><span></span><span></span>
+  </div>
   <div id="response"></div>
   <div class="chat-container">
     <button class="mic-button" id="micBtn">🎤</button>
-    <input type="text" id="userInput" placeholder="הקלד כאן..." />
+    <input type="text" id="userInput" placeholder="הקלד כאן...">
     <button class="send-button" id="sendBtn" style="display:none">✈️</button>
     <button class="smart-button" id="smartBtn">💬</button>
   </div>
 <script>
-const responseDiv = document.getElementById("response");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const micBtn = document.getElementById("micBtn");
-const smartBtn = document.getElementById("smartBtn");
-const indicator = document.getElementById("indicator");
+let responseDiv = document.getElementById("response");
+let userInput = document.getElementById("userInput");
+let sendBtn = document.getElementById("sendBtn");
+let micBtn = document.getElementById("micBtn");
+let smartBtn = document.getElementById("smartBtn");
+let waves = document.getElementById("waves");
+let speakingIndicator = document.getElementById("speakingIndicator");
 
 userInput.addEventListener("input", () => {
   sendBtn.style.display = userInput.value.trim() ? "inline-flex" : "none";
 });
 
-sendBtn.addEventListener("click", () => sendToBot());
-userInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendToBot();
-});
+sendBtn.addEventListener("click", () => sendText());
+userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendText(); });
 
-function addBubble(text, className) {
-  const div = document.createElement("div");
-  div.className = `bubble ${className}`;
-  div.innerText = text;
-  responseDiv.appendChild(div);
+function appendBubble(text, type) {
+  let bubble = document.createElement("div");
+  bubble.className = `bubble ${type}-bubble`;
+  bubble.innerText = text;
+  responseDiv.appendChild(bubble);
   responseDiv.scrollTop = responseDiv.scrollHeight;
 }
 
-async function sendToBot(text = null) {
-  const input = text || userInput.value.trim();
-  if (!input) return;
-  addBubble(input, "user-bubble");
+async function sendText() {
+  let msg = userInput.value.trim();
+  if (!msg) return;
+  appendBubble(msg, "user");
   userInput.value = "";
   sendBtn.style.display = "none";
-  setIndicator("thinking");
-  try {
-    const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input })
-    });
-    clearIndicator();
-    const data = await res.text();
-    addBubble(data, "bot-bubble");
-  } catch (e) {
-    clearIndicator();
-    alert("שגיאה בשליחה");
-  }
+  await sendToServer({ message: msg });
 }
 
-function setIndicator(mode) {
-  indicator.innerHTML = "";
-  if (mode === "listening") {
-    const dot = document.createElement("div");
-    dot.className = "listening-dot";
-    indicator.appendChild(dot);
-  } else if (mode === "speaking") {
-    const bars = document.createElement("div");
-    bars.className = "speaking-bars";
-    for (let i = 0; i < 3; i++) bars.appendChild(document.createElement("span"));
-    indicator.appendChild(bars);
-  } else if (mode === "thinking") {
-    indicator.innerText = "⏳";
-  }
-}
-function clearIndicator() {
-  indicator.innerHTML = "";
-}
-
-let mediaRecorder;
-let chunks = [];
+let mediaRecorder, chunks = [], smartMode = false;
 
 micBtn.addEventListener("mousedown", startRecording);
 micBtn.addEventListener("mouseup", stopRecording);
@@ -223,85 +182,110 @@ async function startRecording() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   mediaRecorder = new MediaRecorder(stream);
   chunks = [];
+  waves.style.display = "block";
   mediaRecorder.ondataavailable = e => chunks.push(e.data);
   mediaRecorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'audio/webm' });
-    const formData = new FormData();
-    formData.append('file', blob, 'recording.webm');
-    formData.append('message_type', 'voice');
-    setIndicator("thinking");
-    try {
-      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-        method: "POST",
-        body: formData
-      });
-      clearIndicator();
-      const audio = new Audio(URL.createObjectURL(await res.blob()));
-      setIndicator("speaking");
-      audio.play();
-      audio.onended = clearIndicator;
-    } catch (e) {
-      clearIndicator();
-      alert("שגיאה בשליחת ההקלטה");
-    }
+    waves.style.display = "none";
+    let blob = new Blob(chunks, { type: 'audio/webm' });
+    await sendToServer(blob, true);
   };
   mediaRecorder.start();
-  setIndicator("listening");
 }
-
 function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
+  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
 }
 
-let smartActive = false;
 smartBtn.addEventListener("click", () => {
-  smartActive = !smartActive;
-  smartBtn.textContent = smartActive ? "⏹️" : "💬";
-  if (smartActive) loopSmart();
+  smartMode = !smartMode;
+  smartBtn.innerText = smartMode ? "⏹️" : "💬";
+  if (smartMode) loopSmart();
 });
 
 async function loopSmart() {
-  while (smartActive) {
-    await smartOnce();
+  while (smartMode) {
+    await startSmartOnce();
     await new Promise(r => setTimeout(r, 500));
   }
 }
 
-async function smartOnce() {
+async function startSmartOnce() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const recorder = new MediaRecorder(stream);
-  const audioChunks = [];
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioContext.createMediaStreamSource(stream);
+  const processor = audioContext.createScriptProcessor(2048, 1, 1);
+  let audioChunks = [];
+  let silenceStart = null;
+  const threshold = 0.01;
+  const silenceDelay = 1500;
+
+  waves.style.display = "block";
+  speakingIndicator.style.display = "none";
+
   recorder.ondataavailable = e => audioChunks.push(e.data);
   recorder.onstop = async () => {
+    source.disconnect();
+    processor.disconnect();
+    audioContext.close();
     stream.getTracks().forEach(t => t.stop());
-    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-    const formData = new FormData();
-    formData.append('file', blob, 'recording.webm');
-    formData.append('message_type', 'voice');
-    setIndicator("thinking");
-    try {
-      const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+    waves.style.display = "none";
+    let blob = new Blob(audioChunks, { type: 'audio/webm' });
+    await sendToServer(blob, true);
+  };
+
+  processor.onaudioprocess = event => {
+    const input = event.inputBuffer.getChannelData(0);
+    let sum = 0.0;
+    for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+    const rms = Math.sqrt(sum / input.length);
+    if (rms < threshold) {
+      if (!silenceStart) silenceStart = Date.now();
+      else if (Date.now() - silenceStart > silenceDelay && recorder.state === "recording") {
+        recorder.stop();
+      }
+    } else {
+      silenceStart = null;
+    }
+  };
+
+  source.connect(processor);
+  processor.connect(audioContext.destination);
+  recorder.start();
+}
+
+async function sendToServer(data, isVoice = false) {
+  speakingIndicator.style.display = "none";
+  try {
+    let res;
+    if (isVoice) {
+      const formData = new FormData();
+      formData.append('file', data, 'recording.webm');
+      formData.append('message_type', 'voice');
+      res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
         method: "POST",
         body: formData
       });
-      clearIndicator();
-      const audio = new Audio(URL.createObjectURL(await res.blob()));
-      setIndicator("speaking");
-      audio.play();
-      await new Promise(r => {
-        audio.onended = r;
-        setTimeout(r, 15000);
+    } else {
+      res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
       });
-      clearIndicator();
-    } catch (e) {
-      clearIndicator();
     }
-  };
-  recorder.start();
-  setIndicator("listening");
-  setTimeout(() => recorder.stop(), 5000);
+    let blob = await res.blob();
+    let audio = new Audio(URL.createObjectURL(blob));
+    speakingIndicator.style.display = "flex";
+    audio.play();
+    await new Promise(resolve => {
+      audio.onended = () => {
+        speakingIndicator.style.display = "none";
+        resolve();
+      };
+      setTimeout(resolve, 15000);
+    });
+  } catch (err) {
+    console.error("שגיאה בשליחה לשרת:", err);
+  }
 }
 </script>
 </body>
