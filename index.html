@@ -6,7 +6,6 @@
   <title>AlphaDrive Bot</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
   <style>
-    /* שאר עיצוב נשמר + תוספת אייקון שיחה שוטפת וחיווי */
     body {
       margin: 0;
       background-color: #000;
@@ -17,8 +16,16 @@
       overflow-x: hidden;
       font-size: 14px;
     }
-    .title { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
-    .subtitle { font-size: 22px; font-weight: bold; margin-bottom: 20px; }
+    .title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
     .chat-container {
       background-color: #e3e3e3;
       border-radius: 12px;
@@ -43,8 +50,10 @@
       color: #000;
       text-align: right;
     }
-    .chat-container input::placeholder { color: #888; }
-    .mic-button, .send-button, .smart-button {
+    .chat-container input::placeholder {
+      color: #888;
+    }
+    .mic-button, .smart-button {
       background-color: #fff;
       border: none;
       border-radius: 50%;
@@ -54,16 +63,12 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      margin-left: 6px;
+      margin: 0 6px;
       position: relative;
     }
-    .mic-button svg, .send-button svg, .smart-button svg {
+    .mic-button svg, .smart-button img {
       width: 20px;
       height: 20px;
-      fill: #555;
-    }
-    .mic-button:hover, .send-button:hover, .smart-button:hover {
-      background-color: #f0f0f0;
     }
     #response {
       margin-top: 20px;
@@ -96,9 +101,6 @@
       color: #fff;
       margin-left: auto;
       direction: rtl;
-    }
-    @media only screen and (max-width: 600px) {
-      .bubble { font-size: 13px; }
     }
     .fade-in { opacity: 0; animation: fadeIn 0.4s ease forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
@@ -139,107 +141,39 @@
       </svg>
     </button>
     <input type="text" id="userInput" placeholder="הקלד כאן..." />
-    <button class="smart-button" aria-label="שיחה שוטפת או שליחה">
-      <svg class="icon-conversation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M12 3C7.03 3 3 6.58 3 11c0 1.77.77 3.39 2.04 4.69L3 21l5.52-2.13C9.66 19.59 10.8 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z" fill="#555"/>
-      </svg>
-      <svg class="icon-send" xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" style="display: none">
-        <path d="M2 10L18 2l-4 8 4 8z" fill="#555"/>
-      </svg>
+    <button class="smart-button" aria-label="שיחה שוטפת">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAMAAAC7IEhfAAAASFBMVEVHcEz///////////////////////////////////////////////////////////////////////////////////////////////////+WuxFBAAAAIXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGCEyABru3wAAARFJREFUOMuNk1kSgyAMRKcYJWX7v+9cVROonOOpZfAwOwB0kFQuY0okbmgh3cE2zLDoA0S/kwcvkoKhc3+Wb4thztJw1Ad4ncs+knELWvdtPuxMYbD52TBLQAI3ImSAsMd8YTrZwj8g5M97f3zS6gQq3k+loQQHjpvfgHRuwfTyjKknSRAm4BEbcIHsEzRi4Axeb0ZBQjh+BwTCthKqt0sUNp9KZ3DwCdn7MXTpmW4tAAAAAElFTkSuQmCC" alt="שיחה שוטפת" />
     </button>
   </div>
   <script>
     const micButton = document.querySelector(".mic-button");
     const smartButton = document.querySelector(".smart-button");
-    const iconSend = smartButton.querySelector(".icon-send");
-    const iconConversation = smartButton.querySelector(".icon-conversation");
     const inputEl = document.getElementById("userInput");
     const responseDiv = document.getElementById("response");
 
-    function showSpeakingIndicator() {
-      document.getElementById("speaking-indicator").style.display = "flex";
-    }
-    function hideSpeakingIndicator() {
-      document.getElementById("speaking-indicator").style.display = "none";
-    }
-    function scrollToBottom() {
-      setTimeout(() => {
-        responseDiv.scrollTop = responseDiv.scrollHeight;
-      }, 100);
-    }
-    async function sendToBot(text = null) {
-      const input = text || inputEl.value.trim();
-      if (!input) return;
-      const userMsg = document.createElement("div");
-      userMsg.className = "bubble user-bubble fade-in";
-      userMsg.innerText = input;
-      responseDiv.appendChild(userMsg);
-      scrollToBottom();
-      const thinking = document.createElement("div");
-      thinking.id = "thinking";
-      thinking.innerHTML = `⏳ הסוכן חושב...<div class="speaking-indicator"><span></span><span></span><span></span><span></span><span></span></div>`;
-      responseDiv.appendChild(thinking);
-      inputEl.value = "";
-      try {
-        const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input })
-        });
-        await handleResponse(res);
-      } catch (err) {
-        thinking.remove();
-        responseDiv.innerHTML += `<p>❌ שגיאה בשליחה: ${err.message}</p>`;
-      }
-    }
-    async function handleResponse(res) {
-      const thinking = document.getElementById("thinking");
-      const contentType = res.headers.get("Content-Type");
-      thinking.remove();
-      if (contentType && contentType.includes("audio")) {
-        const blob = await res.blob();
-        const audioUrl = URL.createObjectURL(blob);
-        showSpeakingIndicator();
-        const audio = new Audio(audioUrl);
-        audio.play();
-        audio.onended = hideSpeakingIndicator;
-        return;
-      }
-      const raw = await res.text();
-      let parsed = null;
-      try { parsed = JSON.parse(raw.trim()); } catch (_) { parsed = { text: raw }; }
-      if (parsed.text) {
-        const botMsg = document.createElement("div");
-        botMsg.className = "bubble bot-bubble fade-in";
-        botMsg.innerHTML = parsed.text;
-        responseDiv.appendChild(botMsg);
-      }
-      if (parsed.audio_url) {
-        const audio = new Audio(parsed.audio_url);
-        showSpeakingIndicator();
-        audio.play();
-        audio.onended = hideSpeakingIndicator;
-      }
-      scrollToBottom();
-    }
+    let continuousMode = false;
+    let recording = false;
     let mediaRecorder;
     let audioChunks = [];
+
     async function startRecording() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
-      mediaRecorder.ondataavailable = event => { audioChunks.push(event.data); };
+      mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
         const formData = new FormData();
-        formData.append('file', audioBlob, 'recording.webm');
+        formData.append('file', blob, 'recording.webm');
         formData.append('message_type', 'voice');
-        formData.append('source', 'mic');
+        formData.append('source', 'continuous');
+
         const thinking = document.createElement("div");
         thinking.id = "thinking";
-        thinking.innerHTML = `⏳ הסוכן חושב...<div class="speaking-indicator"><span></span><span></span><span></span><span></span><span></span></div>`;
+        thinking.innerHTML = `⏳ הסוכן חושב...<div class='speaking-indicator'><span></span><span></span><span></span><span></span><span></span></div>`;
         responseDiv.appendChild(thinking);
         scrollToBottom();
+
         try {
           const res = await fetch("https://chaim.app.n8n.cloud/webhook/d-id-agent", {
             method: "POST",
@@ -252,29 +186,82 @@
         }
       };
       mediaRecorder.start();
+      setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
     }
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
+
+    async function handleResponse(res) {
+      const thinking = document.getElementById("thinking");
+      const contentType = res.headers.get("Content-Type");
+      thinking.remove();
+
+      if (contentType && contentType.includes("audio")) {
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        showSpeakingIndicator();
+        const audio = new Audio(audioUrl);
+        audio.play();
+        audio.onended = () => {
+          hideSpeakingIndicator();
+          if (continuousMode) startRecording();
+        };
+        return;
       }
+
+      const raw = await res.text();
+      let parsed = null;
+      try {
+        parsed = JSON.parse(raw.trim());
+      } catch (_) {
+        parsed = { text: raw };
+      }
+
+      if (parsed.text) {
+        const botMsg = document.createElement("div");
+        botMsg.className = "bubble bot-bubble fade-in";
+        botMsg.innerHTML = parsed.text;
+        responseDiv.appendChild(botMsg);
+      }
+
+      if (parsed.audio_url) {
+        const audio = new Audio(parsed.audio_url);
+        showSpeakingIndicator();
+        audio.play();
+        audio.onended = () => {
+          hideSpeakingIndicator();
+          if (continuousMode) startRecording();
+        };
+      }
+      scrollToBottom();
     }
-    inputEl.addEventListener("input", () => {
-      const hasText = inputEl.value.trim().length > 0;
-      iconSend.style.display = hasText ? "inline" : "none";
-      iconConversation.style.display = hasText ? "none" : "inline";
-    });
+
+    function showSpeakingIndicator() {
+      document.getElementById("speaking-indicator").style.display = "flex";
+    }
+    function hideSpeakingIndicator() {
+      document.getElementById("speaking-indicator").style.display = "none";
+    }
+    function scrollToBottom() {
+      setTimeout(() => {
+        responseDiv.scrollTop = responseDiv.scrollHeight;
+      }, 100);
+    }
+
     smartButton.addEventListener("click", () => {
-      const hasText = inputEl.value.trim().length > 0;
-      if (hasText) {
-        sendToBot();
+      if (!continuousMode) {
+        continuousMode = true;
+        startRecording();
+        smartButton.style.boxShadow = '0 0 0 3px #4fc3f7';
       } else {
-        alert("מצב שיחה שוטפת מופעל (כרגע הדגמה בלבד)");
+        continuousMode = false;
+        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        smartButton.style.boxShadow = 'none';
       }
     });
-    micButton.addEventListener("mousedown", startRecording);
-    micButton.addEventListener("mouseup", stopRecording);
-    micButton.addEventListener("touchstart", startRecording);
-    micButton.addEventListener("touchend", stopRecording);
+
+    micButton.addEventListener("mousedown", () => { recording = true; startRecording(); });
+    micButton.addEventListener("mouseup", () => { if (recording) mediaRecorder.stop(); recording = false; });
+    micButton.addEventListener("touchstart", () => { recording = true; startRecording(); });
+    micButton.addEventListener("touchend", () => { if (recording) mediaRecorder.stop(); recording = false; });
   </script>
 </body>
 </html>
